@@ -1,0 +1,78 @@
+<html lang="en">
+  <style>
+  .single {
+   height: 50px;
+  }
+  .help {
+   display: none;
+  }
+
+  #submitMenu {
+   display: none;
+  }
+  .checkBox {
+   height: 70px;
+   border: 1px solid;
+   overflow-y: auto;
+   text-align: left;
+  }
+  .lastRow {
+    text-align: center;
+  }
+  .ui-autocomplete {
+    max-height: 100px;
+    overflow-y: auto;
+    /* prevent horizontal scrollbar */
+    overflow-x: hidden;
+  }
+  .sortable {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  </style>
+  <head>
+   <meta charset="UTF-8"> 
+   <header class='darpa-header'><div class='darpa-header-images'><a href='http://www.darpa.mil/'><img class='darpa-logo' src='javascript/style/images/darpa-transparent-v2.png'></a><a href='index.html' class='programlink'><img    src='javascript/style/images/Open-Catalog-Single-Big.png'></a></div></header>
+  </head>
+  <div id="tabs">
+    <ul id="schemaLinks">
+    </ul>
+  </div>
+  <body>
+    <!-- Menu for asking for cookies, first name and last name -->
+    <div id="nameMenu" title="Please enter your first and last name.">
+      First Name: <input type="text" id="fname"></input><br>
+      Last Name: <input type="text" id="lname"></input>
+    </div>
+    <!-- Add menu text, pre tag preserves format of text. Title is what displays at top of menu. -->
+    <div id="addMenu" title="Is this entry correct?">
+      <pre id="addMenuText"></pre>
+    </div>
+    <!-- Submit menu text, change what's inside the brackets to change the text. -->
+    <div id="submitMenu" title="Submit">Are you sure you wish to submit?</div>
+    <!-- Location to display errors, the errorList contains a list of all errors found in form. -->
+    <div class="ui-widget">
+      <div id="error" class="ui-state-error ui-corner-all">
+        <p>
+        <span class="ui-icon ui-icon-alert" style="float: left; margin-right: .3em;"></span>
+        <ul id="errorList"></ul>
+        </p>
+      </div>
+    </div>
+  </body>
+
+  <link rel='stylesheet' href='javascript/style/header_footer.css' type='text/css'/> 
+  <footer>
+    <div class='footer-style'>
+      <hr>  
+        <p><a href='http://www.darpa.mil/FOIA.aspx'>FOIA</a> | <a href='http://www.darpa.mil/Privacy_Security_Notice.aspx'>Privacy and Security</a> | 
+        <a href='http://www.darpa.mil/NoFearAct.aspx'>No Fear Act</a> | <a href='http://www.darpa.mil/External_Link.aspx?url=http://dodcio.defense.gov/DoDSection508/Std_Stmt.aspx'>Accessibility/Section 508</a></p>
+    </div>
+  </footer>
+  <link href="javascript/style/jquery-ui.css" rel="stylesheet">
+  <script src="javascript/jquery-2.1.1.min.js"></script>
+  <script src="javascript/style/jquery-ui.js"></script>
+  <script src="javascript/jquery.autosize.min.js"></script>
+  <script src="javascript/data_entry.js"></script>
+</html>
