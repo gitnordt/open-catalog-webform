@@ -629,8 +629,6 @@ $( function() {
 	  // server, while cancel sends them back to the page without doing anything.
 	 var subset = setSubmission();
 	 console.log(subset);
-
-	
       $( "#submitMenu" ).dialog({
           resizable: false,
           modal: true,
