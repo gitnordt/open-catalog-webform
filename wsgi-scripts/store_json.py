@@ -173,18 +173,23 @@ def createDir(location, userName):
 
 # Server response to client requests
 def application(environ, start_response):
-  request_body = environ['wsgi.input'].read()
+  server_response = {}
+  request_body = environ['wsgi.input'].read() # Reads input from client
   # Loads the json from the client, preserves the order.
-  json_entries = json.loads(request_body, object_pairs_hook=OrderedDict)
-  directory = createDir(save_path, json_entries['User'])
-  config = openJSON(config_file) # Configuration for saving files
+  ##json_entries = json.loads(request_body, object_pairs_hook=OrderedDict)
+  json_entries = json.loads(request_body)
+  ##directory = createDir(save_path, json_entries['User'])
+  ##config = openJSON(config_file) # Configuration for saving files
   # Sorts the json entries from the client into a new object
   # based on the configuration from config.json.
-  storage = sortJSONEntries(json_entries['Entries'], config['Storage'])
-  makeJSONFiles(storage, config['Storage'], directory, json_entries['User'])
+  ##storage = sortJSONEntries(json_entries['Entries'], config['Storage'])
+  ##makeJSONFiles(storage, config['Storage'], directory, json_entries['User'])
+  
   status = '200 OK'
   response_headers = [('Content-type', 'text/plain')]
   start_response(status, response_headers)
-
-  return ["OK"]
+  server_response['Status'] = status
+  json_response = json.dumps(server_response)
+  
+  return [json_response]
 

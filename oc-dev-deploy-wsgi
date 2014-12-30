@@ -1,4 +1,5 @@
 #!/bin/bash
+#!/usr/bin/python
 filename=wsgi.tgz
 filepath=workspace/wsgi/$filename
 deployfile="wsgi-scripts"

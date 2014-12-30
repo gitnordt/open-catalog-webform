@@ -72,32 +72,25 @@ $( function() {
   } 
   
   // The html div sections below are meant to be hidden
-  $( "#error" ).hide(); // This div only appears after a validation error occurs
-  // The button hides menu text, this is not meant to appear on the main page
+  $( "#error" ).hide();
   $( "#submitTxt" ).hide();
   $( "#addMenu" ).hide();
 
-  // Gets the set name of the user, will only send a request to the server
-  // for page information if both the first and last name have been set.
+  // Gets the set name of the user, will only send a request to the server for page information if both the first
+  // and last name have been set.
   var user = {};
   user['First'] = getCookie('fname');
   user['Last'] = getCookie('lname');
   var json_post = JSON.stringify(user);
-  
+	console.log("json_post");
+	console.log(json_post);
+	console.log(user);
   // Will only request information from the server
   // if the user has entered a non-blank name.
   if (user['First'] != ''){
-    $.ajax({
-      type:'POST',
-      url:'/wsgi-scripts/auto_data.py',
-      data:json_post,
-      // Creates the web page if and only 
-      // if data has been recieved from
-      // the server successfully.
-      success: function( data ) {
-        createPage( data );
-      }
-    });
+    var results = getJSON('/wsgi-scripts/auto_data.py', json_post);
+	console.log(results);
+	createPage(results, json_post);
   }
 
   // Clears the values of a tab on the page.
@@ -185,9 +178,8 @@ $( function() {
         }
       }
       
-      // If the field is supposed to contain multiple values,
-      // it will split the field's text into separate values
-      // and add each to a list.
+      // If the field is supposed to contain multiple values, it will split the field's text
+	  // into separate values and add each to a list.
       if ( multiple ) {
         // Splits text based on newlines, accounts for OS differences.
         var valueList = validAttr.split(/\r\n|\n|\r/);
@@ -202,8 +194,7 @@ $( function() {
           }    
   
         }  
-        // Assigns the value to be stored in JSON as
-        // the list with blank values ignored, and 
+        // Assigns the value to be stored in JSON as the list with blank values ignored, and 
         // unnecessary whitespace removed.
         validAttr = finalList; 
       }
@@ -219,14 +210,12 @@ $( function() {
     return validAttr;
   }
 
-  // Returns a JSON schema with blank values. 
-  // This means Array values will be turned into
+  // Returns a JSON schema with blank values. This means Array values will be turned into
   // empty arrays and 
   function blankSchema( schema ) {
     var schemaCopy = {};
     for (var attribute in schema) {
-      // Schema attributes with a list
-      // i.e. expects multiple inputs, will
+      // Schema attributes with a list i.e. expects multiple inputs, will
       // have its value replaced by an empty array.
       if( schema[attribute] instanceof Array ) {
         schemaCopy[attribute] = [];
@@ -238,22 +227,18 @@ $( function() {
     return schemaCopy
   }
 
-  // Splits a given text value using
-  // newline and space terms.
+  // Splits a given text value using newline and space terms.
   function split( val ) {
     return val.split( /\n\s*/ );
   }
   
-  // Extracts the last term from a text
-  // value that was split using the above function
+  // Extracts the last term from a text value that was split using the above function
   function extractLast( term ) {
     return split( term ).pop();
   }
     
-  // Adds error text to the special div
-  // on the page. The error input is the
-  // text that describes the error. The location
-  // is the field/row (e.g. Program Teams) where 
+  // Adds error text to the special div on the page. The error input is the
+  // text that describes the error. The location is the field/row (e.g. Program Teams) where 
   // the error occured.
   function addError( error, location ) {
     var errorText = '<li>Error in "' + location +
@@ -327,7 +312,7 @@ $( function() {
   function createTable ( schema, schemaType, pubColumns, softwareColumns, autoData ) {
     var id = schemaType + "t";
     var table = '<table id="' + id +
-    '"><tr><th>Name</th><th>Value</th></tr>';
+    '"><tr><th>Field Title</th><th>Field Value</th></tr>';
     var tabSelector = "#" + schemaType;
 
     // Adds row to the table for every attribute present in the schema.
@@ -445,49 +430,83 @@ $( function() {
     return
   }
 
-  // Generates the web page given the schemas, and configuration from the
-  // server. pageData is the server response to the post request made
-  // near the top of this script. To see details of the server response,
-  // please see the auto_data.py script.
-  function createPage ( pageData ) {
+  function getJSON (url_param, data_param){
+		var results = $.ajax({
+			type:'POST',
+			async: false,
+			url: url_param,
+			data:data_param,
+			// Creates the web page if and only if data has been recieved from the server successfully.
+			success: function( data ) {
+			results = data			
+			}
+		});
+
+		return JSON.parse(results.responseText);
+  }
+  
+  function setSubmission(){
+      var serverSubmit = {}; // The object that will eventually be passed to the server.
+      serverSubmit['Entries'] = schemaList; // User data
+      serverSubmit['User'] = getCookie('fname') + '_' + getCookie('lname'); // User ID
+      // Data transformed into a version that can be passed to the server.
+      var submission = JSON.stringify(serverSubmit); 
+      // Replaces the html code for the "<" and ">" symbols with those symbols. This was done to ensure no 
+	  // executable script could be entered on the page itself. The data would
+      // need to be checked server side for html as well. 
+      submission = submission.replace(/&lt/g,'<').replace(/&gt/g,'>');
+	  return submission;
+  }
+  // Generates the web page given the schemas, and configuration from the server. pageData is the server response
+  // to the post request made near the top of this script. To see details of the server response,
+  // please see the auto_data.py script. 
+ 
+  function createPage ( pageData, json_post ) {
+
     var schemaObject = {}; // Meant to store a single instance of a JSON schema
     var schemas = pageData['Schemas']; // List of schemas from server
-    // The two variables below store data for two keys that will be used
-    // to generate checkboxes, these are special cases as all other schema
-    // input types generate textareas.
+    // The two variables below store data for two keys that will be used to generate checkboxes, these are special
+	// cases as all other schema input types generate textareas.
+	
+	
+	/*console.log(pageData);
+	console.log(pageData.Schemas);
+	console.log(pageData.Auto_Data);*/
     var pubsColumns = pageData['Auto_Data']['Display Pubs Columns'];                                                         
     var softwareColumns = pageData['Auto_Data']['Display Software Columns'];
     var autoData = []; // Stores all keys of fields that will have autocomplete
 
-    // Creates a list of all fields that will
-    // use auto-complete.
+    // Creates a list of all fields that will use auto-complete.
     for( var key in pageData['Auto_Data'] ) {
       autoData.push(key);
     }
 
-    // Identifies all the required (needs non-blank value) fields
-    // for each schema. It then assigns the list of required fields
-    // to the required object (defined at the top), where the key 
-    // is the schema type.
+    // Identifies all the required (needs non-blank value) fields for each schema. It then assigns the list of 
+	// required fields to the required object (defined at the top), where the key is the schema type.
     for( var i = 0; i < pageData['Required'].length; i++ ) {
-        // Assigns the list to the appropriate place in the 
-        // required object, where the key is the schema type.
+        // Assigns the list to the appropriate place in the required object, where the key is the schema type.
         for( var key in pageData['Required'][i]) {
           required[key] = pageData['Required'][i][key];
           break;
         }
     }
 
-    // For all the schemas returned from the 
-    // server, it will create a tab for each 
-    // which includes a table and buttons for each
+    // For all the schemas returned from the server, it will create a tab for each which includes a table and 
+	// buttons for each
     for ( var i = 0; i < schemas.length; i++ ) {
-      var schemaType = schemas[i]['Type']; // A string that identifies the type of
-                                           // schema that is currently being used.
+      var schemaType = schemas[i]['Type']; // A string that identifies the type of schema that is currently being used.
       var schemaCopy = schemas[i]['Schema'][0]; // An instance of the schema type
-      schemaList[schemaType] = []; // Creates an empty list to hold copies of the
-                                   // schema with user entered values.
-
+      schemaList[schemaType] = []; // Creates an empty list to hold copies of the schema with user entered values.
+	  
+	  //new - removing date fields per customer request		   
+	  if(schemaType == "Publication" || "Software"){
+		  var schemaKeys = Object.keys(schemaCopy);
+		  for (key in schemaKeys){
+			  if(schemaKeys[key] == "New Date" || schemaKeys[key] == "Update Date")
+				delete schemaCopy[schemaKeys[key]]; 
+		  }
+	  }							   
+								   
       // Creates the tab for the schema.
       var html = '<li><a href="#' + schemaType + '">' +
       schemaType + '</a></li>';
@@ -505,10 +524,8 @@ $( function() {
     // help menus).
     for( var i = 0; i < pageData['Help_Menu'].length; i++) {
       var currentMenu = pageData['Help_Menu'][i]
-      // Checks to see if the schema type is "all"
-      // and it is, the menu text provided is for the
-      // Add/Submit buttons which is treated seperately.
-      // Otherwise, it will add help menus for all schema types
+      // Checks to see if the schema type is "all" and it is, the menu text provided is for the
+      // Add/Submit buttons which is treated seperately. Otherwise, it will add help menus for all schema types
       // and fields in those schemas provided in the config file.
       if(currentMenu['Schema'] == "All") {
         var menu = {};
@@ -525,9 +542,7 @@ $( function() {
       }
     }
 
-    // Ensures that when selecting a value from
-    // the auto-complete list of values, the
-    // input will resize.
+    // Ensures that when selecting a value from the auto-complete list of values, the input will resize.
     $( ".autoComplete.single" )
     .autocomplete({
       minLength: 1,
@@ -537,11 +552,9 @@ $( function() {
       }
     });
 
-    // When selecting values from an auto-complete
-    // box and the input field expects multiple-values,
-    // this will ensure that new values will be appended to
-    // the input list via a newline character, and the input
-    // box will be resized.
+    // When selecting values from an auto-complete box and the input field expects multiple-values,
+    // this will ensure that new values will be appended to the input list via a newline character, and 
+	// the input box will be resized.
     $( ".autoComplete.multiple" )
       .bind( "keydown", function( event ) {
         if ( event.keyCode === $.ui.keyCode.TAB &&
@@ -569,8 +582,7 @@ $( function() {
         }
       });
 
-    // Binds the source of the auto-complete data
-    // to the appropriate input box.
+    // Binds the source of the auto-complete data to the appropriate input box.
     $.each( $(".autoComplete.multiple"), function() {
       var data_label = $( this ).attr( 'data-label' );
       var source = pageData['Auto_Data'][data_label];
@@ -584,8 +596,7 @@ $( function() {
         });
     });
     
-    // Binds the source of the auto-complete data
-    // to the appropriate input box.
+    // Binds the source of the auto-complete data to the appropriate input box.
     $.each( $(".autoComplete.single"), function() {
       var data_label = $( this ).attr( 'data-label' );
       $( this )
@@ -593,9 +604,7 @@ $( function() {
           source: pageData['Auto_Data'][data_label]
         });
     });
-    
-    // Binds the auto-complete data for the DARPA Program
-    // names to the appropriate fields.
+    // Binds the auto-complete data for the DARPA Program names to the appropriate fields.
     $.each( $( "textarea[data-label='DARPA Program Name'],\
     textarea[data-label='DARPA Program']" ), function( event, ui ) {
       $( this )
@@ -609,27 +618,19 @@ $( function() {
     $( '.sortable' ).disableSelection();
     // Creates the tab effect on the page
     $( '#tabs' ).tabs();
-    // Enables automatic resizing of the
-    // textareas on the page.
-    $( 'textarea' ).autosize();  
-    
+    // Enables automatic resizing of the textareas on the page.
+    $( 'textarea' ).autosize(); 
+	
+
     // Handles the submission of data on the page
     $( '.submit' ).click( function () {
-      var serverSubmit = {}; // The object that will eventually be passed
-                             // to the server.
-      serverSubmit['Entries'] = schemaList; // User data
-      serverSubmit['User'] = getCookie('fname') + '_' + getCookie('lname'); // User ID
-      // Data transformed into a version 
-      // that can be passed to the server.
-      var submission = JSON.stringify(serverSubmit); 
-      // Replaces the html code for the "<" and ">" symbols with those
-      // symbols. This was done to ensure no executable script
-      // could be entered on the page itself. The data would
-      // need to be checked server side for html as well. 
-      submission = submission.replace(/&lt/g,'<').replace(/&gt/g,'>');
-      // Creates a confirmation menu for the Submit button, where
-      // clicking confirm sends the data to the server, while
-      // cancel sends them back to the page without doing anything.
+
+      // Creates a confirmation menu for the Submit button, where clicking confirm sends the data to the 
+	  // server, while cancel sends them back to the page without doing anything.
+	 var subset = setSubmission();
+	 console.log(subset);
+
+	
       $( "#submitMenu" ).dialog({
           resizable: false,
           modal: true,
@@ -637,17 +638,13 @@ $( function() {
           height: 200,
           buttons: {
             "Confirm": function() {
-              $( this ).dialog( "close" );
-              $.ajax({
-                type:'POST',
-                url:'/wsgi-scripts/store_json.py',
-                data:submission,
-                success: function( data ) {
-                  alert("Submit was successful.");
-                }
-              });
+			  $( this ).dialog( "close" );
+			  var result2 = getJSON('/wsgi-scripts/store_json.py', subset);
+			  console.log(result2);
+			  if(result2.Status == "200 OK")
+				alert("Submit was successful.");
             },
-            Cancel: function() {
+            "Cancel": function() {
               $( this ).dialog( "close" );
             }
           }
@@ -657,23 +654,19 @@ $( function() {
 
     // Handles the addition of new user input
     $( '.append' ).click( function () {
-      // Obtains the type of schema where the add
-      // button was clicked
+      // Obtains the type of schema where the add button was clicked
       var schemaType = $( this ).attr('schema');
       var selector = 'textarea' + '.' + schemaType;
-      // Obtains a copy of the schema with the obtained
-      // schemaType.
+      // Obtains a copy of the schema with the obtained schemaType.
       var schemaCopy = blankSchema(schemaObject[schemaType]);
-      var badData = false; // This is true if there was
-                           // an error in validation.
+      var badData = false; // This is true if there was an error in validation.
       $( '#errorList').empty(); // Clears the error div
       // Goes to each input on the tab
       $( selector ).each( function() {
         var dataLabel = $( this ).attr( 'data-label' ); // field name
         var multiple; // true if multiple inputs expected
-        // Swaps the symbols "<" and ">" for their equivalent html
-        // codes. This is done to prevent script from being entered
-        // in and executed by the user.
+        // Swaps the symbols "<" and ">" for their equivalent html codes. This is done to prevent script from 
+		// being entered in and executed by the user.
         $(this).val( function(i, v) {
           return v.replace(/</g,'&lt').replace(/>/g,'&gt');
         });
@@ -685,8 +678,7 @@ $( function() {
           multiple = false;
         }
         
-        // Validates the input and then assigns it to the appropriate
-        // place in the schema if it doesn't have errors.
+        // Validates the input and then assigns it to the appropriate place in the schema if it doesn't have errors.
         attribute = validate(multiple, attribute, dataLabel, schemaType);
         if( attribute !== false ) {
           schemaCopy[dataLabel] = attribute;  
@@ -696,9 +688,8 @@ $( function() {
         }
       }); 
       
-      // If the data isn't bad, the error div will be emptied
-      // and all of the user entered data will be pushed to 
-      // the schemaList(the data that will sent to the server).
+      // If the data isn't bad, the error div will be emptied and all of the user entered data will be pushed 
+	  // to the schemaList(the data that will sent to the server).
       if( !badData ) {
         var selector = '#error';
         $( '#errorList').empty();
@@ -713,9 +704,7 @@ $( function() {
           $( selector ).hide();
         }
         
-        addButtonMenu(schemaCopy); // Creates text preview of
-                                   // data entry as it will
-                                   // appear on the server.
+        addButtonMenu(schemaCopy); // Creates text preview of data entry as it will appear on the server.
         $( "#addMenu" ).dialog({
           resizable: false,
           modal: true,
