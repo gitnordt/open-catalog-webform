@@ -1,0 +1,48 @@
+.ui-state-display {
+    /*background: none repeat scroll 0 0 #63A2B9 /*#95D4EB;*/
+    border: 1px solid #448dae;
+    color: #026890;
+    font-weight: normal;
+	background: #79c9ec url("images/ui-bg_glass_75_79c9ec_1x400.png") 50% 50% repeat-x;
+	font-size: 90%;
+    padding-bottom: 2px;
+}
+.single {
+	height: 50px;
+}
+.help {
+	display: none;
+}
+
+#submitMenu {
+	display: none;
+}
+.checkBox {
+	height: 68px;
+	border: 1px solid;
+	overflow-y: auto;
+	text-align: left;
+	width:89%;
+	margin: 0 auto;
+}
+.lastRow {
+	text-align: center;
+}
+.ui-autocomplete {
+	max-height: 100px;
+	overflow-y: auto;
+	/* prevent horizontal scrollbar */
+	overflow-x: hidden;
+}
+.sortable {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+textarea{
+	min-width:14em;
+	margin: 0 auto;
+	display: block;
+	font-size: 90% !important;
+}

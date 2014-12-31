@@ -31,6 +31,16 @@ function getCookie(cname) {
     return "";
 }
 
+function radioSwitch(id){
+	var sibling_radio_fields = $('#' + id).parent().parent().parent().find("input:radio");
+
+	$.each(sibling_radio_fields, function( index, radio ) {
+		//console.log(radio);
+		if(radio.id != id)
+			radio.checked = false;
+	});
+}
+
 // Runs the code below once the document loads.
 $( function() {
   $( "#nameMenu" ).hide();
@@ -82,9 +92,7 @@ $( function() {
   user['First'] = getCookie('fname');
   user['Last'] = getCookie('lname');
   var json_post = JSON.stringify(user);
-	console.log("json_post");
-	console.log(json_post);
-	console.log(user);
+
   // Will only request information from the server
   // if the user has entered a non-blank name.
   if (user['First'] != ''){
@@ -258,15 +266,29 @@ $( function() {
     // leaving it checked as default.
     for ( var i = 0; i < checkBoxes.length; i++ ) {
       selectValue = checkBoxes[i];
-      html += '<li class="ui-state-default">';
-      html += '<input type="checkbox" name="' + dataLabel +
+      html += '<li class="ui-state-display">';
+      html += '<input type="checkbox" data-label="' + dataLabel +
       '" value="' + selectValue + '" class="' + schemaType +
       '" checked="checked">' + selectValue + '<br>';
     }
 
     return html;
   }
+  
+  function addRadioButtons ( options, schemaType, dataLabel ) {
+    var html = "";
+    // For each value in the checkBoxes array, it will create a checkbox input with its name/group being
+    // dataLabel, its class being the schemaType, and leaving it checked as default.
+    for ( var i = 0; i < options.length; i++ ) {
+      selectValue = options[i];
+      html += '<li class="ui-state-display">';
+      html += '<input type="radio" data-label="' + dataLabel +
+      '" value="' + selectValue + '" id="radio_' + selectValue + '" class="' + schemaType +
+      '" onclick="radioSwitch(this.id);">' + selectValue + '<br>';
+    }
 
+    return html;
+  }
   // Adds Help Menu text to the page so it can be
   // displayed in a dialog box. 
   // Type is the schema or tab type that the help button
@@ -294,6 +316,7 @@ $( function() {
     }
 
   }
+  
 
   // Creates the table present in each tab or schema type on the page.
   // This includes input boxes (checkboxes or textareas) for each
@@ -309,10 +332,10 @@ $( function() {
   // autoData is a list of fields that will have the auto-complete feature added to 
   // them, this list is present to ensure the table columns have the correct
   // classes assigned.
-  function createTable ( schema, schemaType, pubColumns, softwareColumns, autoData ) {
-    var id = schemaType + "t";
+  function createTable ( schema, schemaType, offices, pubColumns, softwareColumns, autoData ) {
+    var id = schemaType + "_table";
     var table = '<table id="' + id +
-    '"><tr><th>Field Title</th><th>Field Value</th></tr>';
+    '" width="36%"><tr><th>Field Title</th><th>Field Value</th></tr>';
     var tabSelector = "#" + schemaType;
 
     // Adds row to the table for every attribute present in the schema.
@@ -323,13 +346,17 @@ $( function() {
 
       // Decides between adding checkboxes or a textarea, only two keys currently will generate checkboxes.
       if ( key == "Display Pubs Columns" || 
-           key == "Display Software Columns" ) {
+           key == "Display Software Columns" ||
+		   key == "DARPA Office") {
         
         tableRow += '<div class="checkBox"><ul class="sortable">'; // Ensures that the checkboxes
                                                                    // can be arranged.
         // Adds checkboxes based on the data from either the pubsColumns or
         // softwareColumns array.
-        if ( key == "Display Pubs Columns" ) {     
+		if ( key == "DARPA Office" ) {     
+          tableRow += addRadioButtons( offices, schemaType, key );       
+        }
+        else if ( key == "Display Pubs Columns" ) {     
           tableRow += addCheckBoxes( pubColumns, schemaType, key );       
         }
         else {
@@ -465,6 +492,7 @@ $( function() {
 
     var schemaObject = {}; // Meant to store a single instance of a JSON schema
     var schemas = pageData['Schemas']; // List of schemas from server
+	var offices = pageData['Office_Names'];
     // The two variables below store data for two keys that will be used to generate checkboxes, these are special
 	// cases as all other schema input types generate textareas.
 	
@@ -499,7 +527,7 @@ $( function() {
       schemaList[schemaType] = []; // Creates an empty list to hold copies of the schema with user entered values.
 	  
 	  //new - removing date fields per customer request		   
-	  if(schemaType == "Publication" || "Software"){
+	  if(schemaType == "Publication" || "Software" || "Program"){
 		  var schemaKeys = Object.keys(schemaCopy);
 		  for (key in schemaKeys){
 			  if(schemaKeys[key] == "New Date" || schemaKeys[key] == "Update Date")
@@ -515,8 +543,9 @@ $( function() {
       html = '<div id="' + schemaType + '">' + '</div>';
       $( '#tabs' ).append(html);
       schemaObject[schemaType] = blankSchema(schemaCopy);
-      // A table with the buttons and appropriate input fields is created
-      createTable( schemaCopy, schemaType, pubsColumns, softwareColumns, autoData );
+	  
+      // A table with the buttons and appropriate input fields is created  
+      createTable( schemaCopy, schemaType, offices, pubsColumns, softwareColumns, autoData );
     }
 
     // Creates the help menu text for every schema and field present in the 
@@ -596,6 +625,12 @@ $( function() {
         });
     });
     
+	console.log("tab: " ); 
+	var tab_links = $( '#schemaLinks' ).find("li");
+	console.log(tab_links);
+	//aria-controls, name of tab
+	//aria-selected, selection option
+	
     // Binds the source of the auto-complete data to the appropriate input box.
     $.each( $(".autoComplete.single"), function() {
       var data_label = $( this ).attr( 'data-label' );
@@ -604,14 +639,15 @@ $( function() {
           source: pageData['Auto_Data'][data_label]
         });
     });
-    // Binds the auto-complete data for the DARPA Program names to the appropriate fields.
+    
+	/*// Binds the auto-complete data for the DARPA Program names to the appropriate fields.
     $.each( $( "textarea[data-label='DARPA Program Name'],\
     textarea[data-label='DARPA Program']" ), function( event, ui ) {
       $( this )
         .autocomplete({
           source: pageData['Program_Names']
         });
-    });
+    });*/
     
     // Enables the checkboxes to be rearranged
     $( '.sortable' ).sortable();
@@ -619,7 +655,7 @@ $( function() {
     // Creates the tab effect on the page
     $( '#tabs' ).tabs();
     // Enables automatic resizing of the textareas on the page.
-    $( 'textarea' ).autosize(); 
+    //$( 'textarea' ).autosize(); 
 	
 
     // Handles the submission of data on the page
@@ -628,7 +664,6 @@ $( function() {
       // Creates a confirmation menu for the Submit button, where clicking confirm sends the data to the 
 	  // server, while cancel sends them back to the page without doing anything.
 	 var subset = setSubmission();
-	 console.log(subset);
       $( "#submitMenu" ).dialog({
           resizable: false,
           modal: true,
@@ -654,48 +689,103 @@ $( function() {
     $( '.append' ).click( function () {
       // Obtains the type of schema where the add button was clicked
       var schemaType = $( this ).attr('schema');
-      var selector = 'textarea' + '.' + schemaType;
+      var selectors = ['textarea' + '.' + schemaType, 'input' + '.' + schemaType];
+	  console.log(selectors);
       // Obtains a copy of the schema with the obtained schemaType.
       var schemaCopy = blankSchema(schemaObject[schemaType]);
       var badData = false; // This is true if there was an error in validation.
       $( '#errorList').empty(); // Clears the error div
-      // Goes to each input on the tab
-      $( selector ).each( function() {
-        var dataLabel = $( this ).attr( 'data-label' ); // field name
-        var multiple; // true if multiple inputs expected
-        // Swaps the symbols "<" and ">" for their equivalent html codes. This is done to prevent script from 
-		// being entered in and executed by the user.
-        $(this).val( function(i, v) {
-          return v.replace(/</g,'&lt').replace(/>/g,'&gt');
-        });
-        var attribute = $(this).val();
-        if ( $( this ).hasClass('multiple') ) {
-          multiple = true;
-        }
-        else {
-          multiple = false;
-        }
-        
-        // Validates the input and then assigns it to the appropriate place in the schema if it doesn't have errors.
-        attribute = validate(multiple, attribute, dataLabel, schemaType);
-        if( attribute !== false ) {
-          schemaCopy[dataLabel] = attribute;  
-        }
-        else {
-          badData = true;
-        }
-      }); 
       
+	  for(selector in selectors){
+		   console.log("################");
+		   console.log(selectors[selector]);
+		  // Goes to each input on the tab
+		  var office_val = '', sw_col_val = '', pub_col_val = '';
+		  $( selectors[selector] ).each( function(i) {
+			var dataLabel = $( this ).attr( 'data-label' ); // field name
+			var multiple; // true if multiple inputs expected
+			// Swaps the symbols "<" and ">" for their equivalent html codes. This is done to prevent script from 
+			// being entered in and executed by the user.
+			if(selectors[selector].indexOf("input") != -1)
+			{
+				if($(this).is(":checked") == true){
+					if(dataLabel == "Display Software Columns")
+						sw_col_val += $(this).val() + '\n'; 
+					else if(dataLabel == "Display Pubs Columns")
+						pub_col_val += $(this).val() + '\n';
+					else
+						office_val = $(this).val();
+				}
+				
+				if(i == ($( selectors[selector] ).length - 1)){
+					// Validates the input and then assigns it to the appropriate place in the schema if it doesn't have errors.
+					if(sw_col_val != ""){
+						attribute = validate(true, sw_col_val, "Display Software Columns", schemaType);
+						if( attribute !== false )
+							schemaCopy["Display Software Columns"] = attribute;  
+						else
+							badData = true;
+					}
+					if(pub_col_val != ""){
+						attribute = validate(true, pub_col_val, "Display Pubs Columns", schemaType);
+						if( attribute !== false )
+							schemaCopy["Display Pubs Columns"] = attribute;  
+						else
+							badData = true;
+					}
+					if(office_val != ""){
+						attribute = validate(false, office_val, "DARPA Office", schemaType);
+						if( attribute !== false )
+							schemaCopy["DARPA Office"] = attribute;  
+						else
+							badData = true;
+					}
+					
+					console.log(schemaCopy);
+				}
+				
+			}
+			else{
+				$(this).val( function(i, v) {
+				  return v.replace(/</g,'&lt').replace(/>/g,'&gt');
+				});
+				var attribute = $(this).val();
+				if ( $( this ).hasClass('multiple') ) {
+				  multiple = true;
+				}
+				else {
+				  multiple = false;
+				}
+				
+				// Validates the input and then assigns it to the appropriate place in the schema if it doesn't have errors.
+				attribute = validate(multiple, attribute, dataLabel, schemaType);
+				if( attribute !== false ) {
+				  schemaCopy[dataLabel] = attribute;  
+				}
+				else {
+				  badData = true;
+				}
+				
+				console.log(schemaCopy);
+			}
+
+			/*console.log(schemaCopy);
+			console.log(dataLabel);
+			console.log($( this ));*/
+
+		  }); 
+	  }
+	  
       // If the data isn't bad, the error div will be emptied and all of the user entered data will be pushed 
 	  // to the schemaList(the data that will sent to the server).
       if( !badData ) {
         var selector = '#error';
         $( '#errorList').empty();
         // Gathers the values from the checked checkboxes
-        $( ':checked.' + schemaType ).each( function() {
+        /*$( ':checked.' + schemaType ).each( function() {
           var dataLabel = $(this).attr('name');
           schemaCopy[dataLabel].push($(this).val());
-        });
+        });*/
 
         // Hides the error div on the page.
         if( $( selector ).is(":visible") ) {
@@ -718,7 +808,7 @@ $( function() {
               $( this ).dialog( "close" );
             }
           }
-      });
+		});
 
         
       }         

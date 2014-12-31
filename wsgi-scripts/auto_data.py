@@ -13,7 +13,7 @@ home_dir = "/home/ubuntu/" # Home directory
 data_dir = home_dir+"workspace/web_catalog/open-catalog-generator/" # Open Catalog Generator Location
 catalog = data_dir + "darpa_open_catalog/" # Open Catalog Location
 wsgi_dir = "/usr/local/www/wsgi-scripts/" # Location of wsgi scripts on server
-program_path = catalog + "active_content.json" # Location of active program names
+active_path = catalog + "active_content.json" # Location of active program names
 script_path = data_dir + "scripts" # Location of scripts in Open Catalog
 schemas_path = catalog + "00-schema-examples.json" # Schema Template File
 config_file = wsgi_dir + "config.json" # Configuration File
@@ -49,6 +49,13 @@ def getProgramNames (path):
     nameList.append(record['Program Name'])
   return nameList
 
+def getOfficeNames (path):
+  nameList = [] # Will store the program names
+  json_content = openJSON(path)
+  for record in json_content:
+    if not record['DARPA Office'] in nameList:
+      nameList.append(record['DARPA Office'])
+  return nameList
 # This will retrieve a list of unique entries
 # present in the Open Catalog of each field name
 # given in the fieldList input. The schemaList
@@ -62,22 +69,17 @@ def getProgramNames (path):
 # is a list of unique entries for the given
 # field.
 def retrieveFieldNames(fieldList, schemaList):
-  openPubs = False # If true, Publication json
-                   # files will be searched
-  openPrograms = False # If true, Program json
-                       # files will be searched
-  openSoftware = False # If true, Software json
-                       # files will be searched
+ # If any are true, json files will be searched
+  openPrograms = False
+  openPubs = False
+  openSoftware = False
 
-  term_list = {} # Object where keys are fields in
-                 # fieldList and values are arrays 
+  term_list = {} # Object where keys are fields in fieldList and values are arrays 
                  # with unique terms for the field.
   for field in fieldList:
     term_list[field] = []
     for schema in schemaList:
-      # Checks to see what types of files
-      # need to be opened to search for
-      # the field entries.
+      # Checks to see what types of files need to be opened to search for the field entries.
       if field in schema['Schema'][0]:
         if schema['Type'] == "Program":
           openPrograms = True
@@ -141,7 +143,7 @@ def restrictSchemas( schemaList, userList, user ):
      return schemaList
    else:
      for i in xrange(len(schemaList)):
-       if schemaList[i]['Type'] == "Program":
+       if schemaList[i]['Type'] == "Office":
          schemaList.pop(i)
          break
 
@@ -163,7 +165,8 @@ def application(environ, start_response):
    response_headers = [('Content-type', 'application/json')]
    start_response(status, response_headers)
    server_response['Schemas'] = restrictSchemas(openJSON(schemas_path), config['Program Managers'], name)
-   server_response['Program_Names'] = getProgramNames(program_path)
+   server_response['Program_Names'] = getProgramNames(active_path)
+   server_response['Office_Names'] = getOfficeNames(active_path)
    server_response['Auto_Data'] = retrieveFieldNames(config['Autocomplete'], server_response['Schemas'])
    server_response['Help_Menu'] = help_menu
    server_response['Required'] = config['Required'] # List of required fields, they must be non-blank.
