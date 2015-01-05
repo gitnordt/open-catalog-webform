@@ -625,30 +625,31 @@ $( function() {
         });
     });
     
-	console.log("tab: " ); 
-	var tab_links = $( '#schemaLinks' ).find("li");
-	console.log(tab_links);
-	//aria-controls, name of tab
-	//aria-selected, selection option
+
+	// Binds the source of the auto-complete data to the appropriate input box.
+	$.each( $(".autoComplete.single"), function() {
+		var data_label = $( this ).attr( 'data-label' );
+		$( this )
+		.autocomplete({
+		  source: pageData['Auto_Data'][data_label]
+		});
+	});
 	
-    // Binds the source of the auto-complete data to the appropriate input box.
-    $.each( $(".autoComplete.single"), function() {
-      var data_label = $( this ).attr( 'data-label' );
-      $( this )
-        .autocomplete({
-          source: pageData['Auto_Data'][data_label]
-        });
-    });
-    
-	/*// Binds the auto-complete data for the DARPA Program names to the appropriate fields.
-    $.each( $( "textarea[data-label='DARPA Program Name'],\
-    textarea[data-label='DARPA Program']" ), function( event, ui ) {
-      $( this )
-        .autocomplete({
-          source: pageData['Program_Names']
-        });
-    });*/
-    
+	
+	// Binds the auto-complete data for the DARPA Program names to the appropriate fields.
+	$.each( $( "textarea[data-label='DARPA Program Name'],\
+	textarea[data-label='DARPA Program']" ), function( event, ui ) {
+		var ui_label = ui.dataset.label;
+		if(ui_label != "DARPA Program Name"){
+		  $( this )
+			.autocomplete({
+			  source: pageData['Program_Names']
+			});
+		}
+		else
+			$( this ).removeAttr("autocomplete");
+	});	
+
     // Enables the checkboxes to be rearranged
     $( '.sortable' ).sortable();
     $( '.sortable' ).disableSelection();
@@ -673,7 +674,6 @@ $( function() {
             "Confirm": function() {
 			  $( this ).dialog( "close" );
 			  var result2 = getJSON('/wsgi-scripts/store_json.py', subset);
-			  console.log(result2);
 			  if(result2.Status == "200 OK")
 				alert("Submit was successful.");
             },
