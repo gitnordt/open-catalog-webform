@@ -11,8 +11,10 @@
   <body>
     <!-- Menu for asking for cookies, first name and last name -->
     <div id="nameMenu" title="Please enter your first and last name.">
-      First Name: <input type="text" id="fname"></input><br>
-      Last Name: <input type="text" id="lname"></input>
+	<table><tbody>
+      <tr><td><label for="fname">First Name:</label></td><td><input type="text" id="fname"></input></td></tr>
+      <tr><td><label for="lname">Last Name:</label></td><td><input type="text" id="lname"></input></td></tr>
+	  </tbody></table>
     </div>
     <!-- Add menu text, pre tag preserves format of text. Title is what displays at top of menu. -->
     <div id="addMenu" title="Is this entry correct?">
@@ -40,8 +42,12 @@
     </div>
   </footer>
   <link href="javascript/style/jquery-ui.css" rel="stylesheet">
+  <link rel="stylesheet" type="text/css" media="screen" href="javascript/jqGrid/css/ui.jqgrid.css" />
   <script src="javascript/jquery-2.1.1.min.js"></script>
   <script src="javascript/style/jquery-ui.js"></script>
   <script src="javascript/jquery.autosize.min.js"></script>
+  <script src="javascript/jqGrid/js/jquery.jqGrid.min.js"></script>
   <script src="javascript/data_entry.js"></script>
+  <script src="../deploy/utils.js"></script>
+  <script type="text/ecmascript" src="javascript/jqGrid/js/i18n/grid.locale-en.js"></script>
 </html>

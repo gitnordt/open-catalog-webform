@@ -49,13 +49,6 @@ def getProgramNames (path):
     nameList.append(record['Program Name'])
   return nameList
 
-def getOfficeNames (path):
-  nameList = [] # Will store the program names
-  json_content = openJSON(path)
-  for record in json_content:
-    if not record['DARPA Office'] in nameList:
-      nameList.append(record['DARPA Office'])
-  return nameList
 # This will retrieve a list of unique entries
 # present in the Open Catalog of each field name
 # given in the fieldList input. The schemaList
@@ -166,7 +159,7 @@ def application(environ, start_response):
    start_response(status, response_headers)
    server_response['Schemas'] = restrictSchemas(openJSON(schemas_path), config['Program Managers'], name)
    server_response['Program_Names'] = getProgramNames(active_path)
-   server_response['Office_Names'] = getOfficeNames(active_path)
+   server_response['Office_Names'] = config['Offices']
    server_response['Auto_Data'] = retrieveFieldNames(config['Autocomplete'], server_response['Schemas'])
    server_response['Help_Menu'] = help_menu
    server_response['Required'] = config['Required'] # List of required fields, they must be non-blank.

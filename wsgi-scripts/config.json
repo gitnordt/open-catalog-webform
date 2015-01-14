@@ -31,6 +31,15 @@
             ]
         }
     ],	
+	"Offices":[
+		"AEO",
+		"BTO",
+		"DSO",
+		"I2O",
+		"MTO",
+		"STO",
+		"TTO"
+	],	
     "Storage":
         {
             "Program":
@@ -49,4 +58,5 @@
                     "Key":"DARPA Program"
                 }
         }
+
 }

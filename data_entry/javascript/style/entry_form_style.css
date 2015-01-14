@@ -2,9 +2,9 @@
     /*background: none repeat scroll 0 0 #63A2B9 /*#95D4EB;*/
     border: 1px solid #448dae;
     color: #026890;
-    font-weight: normal;
 	background: #79c9ec url("images/ui-bg_glass_75_79c9ec_1x400.png") 50% 50% repeat-x;
-	font-size: 90%;
+    font-size: 85%;
+    font-weight: 600;
     padding-bottom: 2px;
 }
 .single {
@@ -22,17 +22,19 @@
 	border: 1px solid;
 	overflow-y: auto;
 	text-align: left;
-	width:89%;
+	width:98%;
 	margin: 0 auto;
 }
 .lastRow {
-	text-align: center;
+	text-align: right;
 }
 .ui-autocomplete {
 	max-height: 100px;
 	overflow-y: auto;
 	/* prevent horizontal scrollbar */
 	overflow-x: hidden;
+	font-size:0.8em !important;
+	
 }
 .sortable {
 	list-style: none;
@@ -46,3 +48,39 @@ textarea{
 	display: block;
 	font-size: 90% !important;
 }
+
+.ui-jqgrid, .ui-jqgrid-view, .ui-dialog .ui-dialog-title{
+	width: 100% !important;
+}
+.ui-jqgrid .ui-jqgrid-htable{
+	font-size:0.9em !important;
+}
+
+.ui-jqgrid .ui-jqgrid-btable{
+	font-size:0.9em !important;
+}
+
+#Program_table, #Software_table, #Publication_table, .submit, .lastHelp{
+	font-size:0.8em !important;
+}
+
+.no-close .ui-dialog-titlebar-close {
+    display: none;
+}
+
+label{
+	padding-right:5px !important;
+}
+
+.ui-dialog{
+	width: 500px !important;
+	font-size:1em !important;
+	left: 40% !important;
+    top: 50% !important;
+}
+
+.addConfirmation{
+	width: 800px !important;
+	font-size:1.1em !important;
+}
+

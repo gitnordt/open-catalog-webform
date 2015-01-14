@@ -3,6 +3,8 @@
 // and the corresponding value is a list that contains schema copies
 // with user entered values.
 var schemaList = {};
+var currentSchema = "";
+
 // An object where each key is the name or type of each schema, where
 // the value is a list of field names in the schema that need to have
 // non-blank values.
@@ -35,7 +37,6 @@ function radioSwitch(id){
 	var sibling_radio_fields = $('#' + id).parent().parent().parent().find("input:radio");
 
 	$.each(sibling_radio_fields, function( index, radio ) {
-		//console.log(radio);
 		if(radio.id != id)
 			radio.checked = false;
 	});
@@ -52,8 +53,9 @@ $( function() {
     $( "#nameMenu" ).dialog({
       resizable: false,
       modal: true,
-      width: 390,
+      width: 410,
       height: 220,
+	  dialogClass: 'no-close',
       buttons: {
       "Enter": function() {
         var fname = $( '#fname' ).val();
@@ -84,6 +86,7 @@ $( function() {
   // The html div sections below are meant to be hidden
   $( "#error" ).hide();
   $( "#submitTxt" ).hide();
+  $( "#addTxt" ).hide();
   $( "#addMenu" ).hide();
 
   // Gets the set name of the user, will only send a request to the server for page information if both the first
@@ -97,7 +100,7 @@ $( function() {
   // if the user has entered a non-blank name.
   if (user['First'] != ''){
     var results = getJSON('/wsgi-scripts/auto_data.py', json_post);
-	console.log(results);
+	//console.log(results);
 	createPage(results, json_post);
   }
 
@@ -112,12 +115,18 @@ $( function() {
       $(this).val('');
     });
     
+	// Resets groups of checkboxes by checking all the values in the group.
     selector = 'input.' + schemaType +
     '[type="checkbox"]';
-    // Resets groups of checkboxes by checking
-    // all the values in the group.
     $( selector ).each( function() {
       this.checked = true;
+    });
+	
+	// Resets radio buttons by unchecking all the values in the group.
+	selector = 'input.' + schemaType +
+    '[type="radio"]';
+	$( selector ).each( function() {
+      this.checked = false;
     });
   }
 
@@ -167,14 +176,14 @@ $( function() {
         // Attributes that require multiple inputs are assigned an empty
         // array, so that it is displayed as a list in the JSON file.
         if ( multiple ) {
-            validAttr = [''];
+            validAttr = [];
         }
 
         // Returns the blank attribute and ends the validation
         // so it doesn't get further processed.
         return validAttr;
       }
-
+	  
       // If the field being validated is "New Date" or "Update Date" 
       // and the field contains a non-blank value, it will evaluate
       // the date. Checks to make sure that the date is in the format
@@ -258,7 +267,7 @@ $( function() {
   // The schemaType is the class that it will be assigned. 
   // The dataLabel is the name of the group that the checkboxes
   // belong to.
-  function addCheckBoxes ( checkBoxes, schemaType, dataLabel ) {
+  function addCheckBoxes ( checkBoxes, schemaType, dataLabel ) { 
     var html = "";
     // For each value in the checkBoxes array, it will
     // create a checkbox input with its name/group being
@@ -302,6 +311,9 @@ $( function() {
     var desc;
     var example;
     var html;
+	
+	//console.log(type);
+	//console.log(menuText);
     for( var i=0; i<menuText.length; i++ ){
       name = menuText[i]['Name'];
       desc = menuText[i]['Description'];
@@ -310,8 +322,7 @@ $( function() {
       // be displayed in a dialog menu.
       html = '<div title="Help" class="help" data-class="' + type + '" data-label="' + name +
       '"><p><b>Name:</b> ' + name + '<br><br><b>Description:</b> ' + desc +
-      '<br><br><b>Example:</b> ' + example + '<br><br>' + 
-      'To enter multiple values, press the Enter key.</p></div>';
+      '<br><br><b>Example:</b> ' + example + '<br></p></div>';
       $( 'body' ).append(html);
     }
 
@@ -334,8 +345,8 @@ $( function() {
   // classes assigned.
   function createTable ( schema, schemaType, offices, pubColumns, softwareColumns, autoData ) {
     var id = schemaType + "_table";
-    var table = '<table id="' + id +
-    '" width="36%"><tr><th>Field Title</th><th>Field Value</th></tr>';
+    var table = '<div style="width:36%; float:left;"><table id="' + id +
+    '"><tr><th>Field Title</th><th>Field Value</th></tr>';
     var tabSelector = "#" + schemaType;
 
     // Adds row to the table for every attribute present in the schema.
@@ -395,21 +406,26 @@ $( function() {
       
       // Adds a help button to the end of every input row
       tableRow += '</td><td><button class="helpBtn notLast" data-label="' + key 
-      + '" data-class="'+ schemaType + '">Help</button>' + '</td></tr>';
+      + '" data-class="'+ schemaType + '">Help</button></td></tr>';
       table += tableRow;
     }
 
     // Below is the html for the Add/Submit buttons that are at the end
     // of every table.
-    var submitBtns = '<tr><td></td><td class="lastRow">' +
-    '<button class="append" schema="'+ schemaType +'">Add</button>' +
-    '<button class="submit">Submit</button></td>' +
-    '<td><button class="helpBtn lastHelp"' +
-    '>Help</button></td></tr></table>';
-    table += submitBtns;
+	
+	
+    var appendBtn = '<tr><td></td><td>' +
+    '<button class="append" style="float:right;" schema="'+ schemaType +'">Add</button></td>' +
+    '<td><button class="helpBtn notLast appendHelp" data-label="Add" data-class="'+ schemaType + '">Help</button></td></tr></table>';
+    table += appendBtn + "</div>";
+
+	table2 = '<div id="results_add_'+ schemaType + '" style="width:64%; float:right; display:none;"><h4 align="center">'+ schemaType +' Entry Queue</h4><p align="center"><span style="font-size:60%; color:red;">*Note: These entries have only been validated. This process is not complete until the entries have been submitted.</span></p><table id="jqGrid_'+ schemaType + '"></table><p style="float:right;"><button class="submit">Submit</button><button class="helpBtn lastHelp"' +
+    '>Help</button></p></div><div style="clear:both;"></div>';
+	
 
     // Adds the generated table to the web page.
     $( tabSelector ).append( table);
+    $( tabSelector ).append( table2);
 
     // Ensures that the help buttons as well as the
     // Add and Submit buttons have the proper icons, formatting,
@@ -425,17 +441,15 @@ $( function() {
       autoOpen: false,
       modal: true,
       height: 500,
-      width: 500 
+      width: 700
     });
 
     $( ".notLast" ).click( function() {
-      // Finds the appropriate menu dialog
-      // for the schema input pops up.
+      // Finds the appropriate menu dialog for the schema input pops up.
       var type = $( this ).attr("data-class");
       var label = $( this ).attr("data-label");
-      var selector = '.help[data-label="' + label + '"]' +
-      '[data-class="' + type + '"]';
-      $( selector ).dialog();
+	  var menu = '.help[data-label="' + label + '"][data-class="' + type + '"]';
+	  $( menu ).dialog();  
     });
 
     $( ".append" ).button({
@@ -452,6 +466,10 @@ $( function() {
     
     $( ".lastHelp" ).click( function() {
       $( "#submitTxt" ).dialog();
+    });
+	
+	$( ".appendHelp" ).click( function() {
+      $( "#addTxt" ).dialog();
     });
 
     return
@@ -472,9 +490,46 @@ $( function() {
 		return JSON.parse(results.responseText);
   }
   
+  function getTableData(data){
+	if(data){
+		  for(var i = 0; i < data.length; i++){
+			var datum_obj = data[i];
+			for (val in datum_obj) {
+				if(val == "id" || val == "actions" ){
+					data[i][val] = null;
+					delete data[i][val];
+				}
+				else if (datum_obj[val] == null)
+					data[i][val] = [];
+			}
+		  }
+		  return data;
+	}
+	else
+		return false;
+  }
+  
+  function arrayToNullValue(object){
+	   for(item in object){
+			var item_val = object[item];
+			//console.log(item,item_val, typeof item_val, item_val.length);
+			if(item_val != null){ 
+				if(typeof item_val === "object" && item_val.length == 0)
+					object[item] = null; 
+			}
+	   }
+	   return object;
+  }
+  
   function setSubmission(){
       var serverSubmit = {}; // The object that will eventually be passed to the server.
-      serverSubmit['Entries'] = schemaList; // User data
+	  var gridData = $("#jqGrid_" + currentSchema).jqGrid('getGridParam', 'data');
+	  gridData = getTableData(gridData);
+	  schemaList[currentSchema] = gridData;
+	  
+	  var newArray = {};
+	  newArray[currentSchema] = schemaList[currentSchema];
+	  serverSubmit['Entries'] = newArray;
       serverSubmit['User'] = getCookie('fname') + '_' + getCookie('lname'); // User ID
       // Data transformed into a version that can be passed to the server.
       var submission = JSON.stringify(serverSubmit); 
@@ -496,12 +551,8 @@ $( function() {
     // The two variables below store data for two keys that will be used to generate checkboxes, these are special
 	// cases as all other schema input types generate textareas.
 	
-	
-	/*console.log(pageData);
-	console.log(pageData.Schemas);
-	console.log(pageData.Auto_Data);*/
-    var pubsColumns = pageData['Auto_Data']['Display Pubs Columns'];                                                         
-    var softwareColumns = pageData['Auto_Data']['Display Software Columns'];
+    var pubsColumns = pageData['Auto_Data']['Display Pubs Columns'];                       
+	var softwareColumns = pageData['Auto_Data']['Display Software Columns'];
     var autoData = []; // Stores all keys of fields that will have autocomplete
 
     // Creates a list of all fields that will use auto-complete.
@@ -543,7 +594,6 @@ $( function() {
       html = '<div id="' + schemaType + '">' + '</div>';
       $( '#tabs' ).append(html);
       schemaObject[schemaType] = blankSchema(schemaCopy);
-	  
       // A table with the buttons and appropriate input fields is created  
       createTable( schemaCopy, schemaType, offices, pubsColumns, softwareColumns, autoData );
     }
@@ -559,12 +609,14 @@ $( function() {
       if(currentMenu['Schema'] == "All") {
         var menu = {};
         menu = currentMenu['Menu'];
-        var desc = menu['Description'];
-        var name = menu['Name'];
-        var html = '<div id="submitTxt" title="Help" class="help">' + 
-        '<p><b>Name:</b> ' + name + '<br><br><b>Description:</b> ' + 
-        desc + '</p></div>';
-        $( 'body' ).append(html);
+		for (item in menu){
+			var desc = menu[item]['Description'];
+			var name = menu[item]['Name'];
+			var html = '<div id="' + name.toLowerCase() + 'Txt" title="Help" class="help">' + 
+			'<p><b>Name:</b> ' + name + '<br><br><b>Description:</b> ' + 
+			desc + '</p></div>';
+			$( 'body' ).append(html);
+		}
       }
       else {
         addMenu(currentMenu['Schema'], currentMenu['Menu']);
@@ -655,6 +707,10 @@ $( function() {
     $( '.sortable' ).disableSelection();
     // Creates the tab effect on the page
     $( '#tabs' ).tabs();
+	$('#tabs >ul >li').click( function (){
+		currentSchema = $(this)[0].textContent;
+		$(".ui-dialog-content").dialog("close");
+	});
     // Enables automatic resizing of the textareas on the page.
     //$( 'textarea' ).autosize(); 
 	
@@ -665,6 +721,8 @@ $( function() {
       // Creates a confirmation menu for the Submit button, where clicking confirm sends the data to the 
 	  // server, while cancel sends them back to the page without doing anything.
 	 var subset = setSubmission();
+	 console.log(subset);
+
       $( "#submitMenu" ).dialog({
           resizable: false,
           modal: true,
@@ -674,8 +732,15 @@ $( function() {
             "Confirm": function() {
 			  $( this ).dialog( "close" );
 			  var result2 = getJSON('/wsgi-scripts/store_json.py', subset);
-			  if(result2.Status == "200 OK")
+			  if(result2.Status == "200 OK"){
+				//unload data, reset schema, and remove entry table
+				$("#jqGrid_" + currentSchema).GridUnload();
+				for(schema in schemaList)
+					schemaList[schema] = [];
+				//console.log($("#results_add_" + currentSchema));	
+				$("#results_add_" + currentSchema).css("display", "none");
 				alert("Submit was successful.");
+			  }
             },
             "Cancel": function() {
               $( this ).dialog( "close" );
@@ -688,24 +753,23 @@ $( function() {
     // Handles the addition of new user input
     $( '.append' ).click( function () {
       // Obtains the type of schema where the add button was clicked
-      var schemaType = $( this ).attr('schema');
+      var schemaType = currentSchema = $( this ).attr('schema');
       var selectors = ['textarea' + '.' + schemaType, 'input' + '.' + schemaType];
-	  console.log(selectors);
+
       // Obtains a copy of the schema with the obtained schemaType.
       var schemaCopy = blankSchema(schemaObject[schemaType]);
       var badData = false; // This is true if there was an error in validation.
       $( '#errorList').empty(); // Clears the error div
-      
+
 	  for(selector in selectors){
-		   console.log("################");
-		   console.log(selectors[selector]);
 		  // Goes to each input on the tab
 		  var office_val = '', sw_col_val = '', pub_col_val = '';
 		  $( selectors[selector] ).each( function(i) {
 			var dataLabel = $( this ).attr( 'data-label' ); // field name
 			var multiple; // true if multiple inputs expected
-			// Swaps the symbols "<" and ">" for their equivalent html codes. This is done to prevent script from 
-			// being entered in and executed by the user.
+			// Swaps the symbols "<" and ">" for their equivalent html codes. This is done to prevent
+			//script from being entered in and executed by the user.
+
 			if(selectors[selector].indexOf("input") != -1)
 			{
 				if($(this).is(":checked") == true){
@@ -740,8 +804,6 @@ $( function() {
 						else
 							badData = true;
 					}
-					
-					console.log(schemaCopy);
 				}
 				
 			}
@@ -759,20 +821,14 @@ $( function() {
 				
 				// Validates the input and then assigns it to the appropriate place in the schema if it doesn't have errors.
 				attribute = validate(multiple, attribute, dataLabel, schemaType);
+				
 				if( attribute !== false ) {
 				  schemaCopy[dataLabel] = attribute;  
 				}
 				else {
 				  badData = true;
 				}
-				
-				console.log(schemaCopy);
 			}
-
-			/*console.log(schemaCopy);
-			console.log(dataLabel);
-			console.log($( this ));*/
-
 		  }); 
 	  }
 	  
@@ -793,26 +849,104 @@ $( function() {
         }
         
         addButtonMenu(schemaCopy); // Creates text preview of data entry as it will appear on the server.
-        $( "#addMenu" ).dialog({
+		$( "#addMenu" ).dialog({
           resizable: false,
           modal: true,
-          width: 1000,
-          height: 500,
+          height: 400,
+		  dialogClass: 'addConfirmation',
+		  position: {
+				my: "center",
+				at: "top+20%",
+				of: window,
+				collision: "fit"
+		  },
           buttons: {
             "Confirm": function() {
-              $( this ).dialog( "close" );
-              schemaList[schemaType].push(schemaCopy);
-              clearTab(schemaType); // Clears the input boxes.
+                $( this ).dialog( "close" );
+				var gridRows = $("#jqGrid_" + schemaType).jqGrid('getGridParam', 'data');
+				var schemaDisplay = [];
+				if(gridRows){
+					for(row in gridRows)
+						schemaDisplay.push(arrayToNullValue(gridRows[row]));
+						
+					schemaDisplay.push(arrayToNullValue(schemaCopy));
+				}
+				else
+					schemaDisplay.push(arrayToNullValue(schemaCopy));
+					
+				schemaList[schemaType] = schemaDisplay;
+				//console.log(schemaList[schemaType]);
+					
+                clearTab(schemaType); // Clears the input boxes.
+
+			   $("#results_add_" + schemaType).css("display", "inline");
+			   var col_keys = Object.keys(schemaDisplay[0]);
+			   
+			   var col_model = [{label: "Remove?", name: "actions", width: 50, formatter: "actions",
+								formatoptions: {keys: false, editbutton : false, delbutton : true, 
+								delOptions: {} }}];
+			   var row_key = "";				
+			   for(key in col_keys){
+					var currentSchema = schemaDisplay[schemaDisplay.length - 1];
+					var col_name =  col_keys[key];
+					if(col_name == "DARPA Program Name" || col_name == "Software" || col_name == "Title"){
+						row_key = currentSchema[col_name];
+						col_model.push({ label: col_name.replace('DARPA', ''), width: col_name.replace('DARPA', '').length * 5 + 16, name: col_name, editable: true, key:true });
+					}
+					else if(col_name == "Program Teams" || col_name == "Categories"  || col_name == "Subcategories"){
+						col_model.push({ label: col_name, width: 200, name: col_name, editable: true });
+					}
+					else
+						col_model.push({ label: col_name.replace('DARPA', ''), width: col_name.replace('DARPA', '').length * 5 + 16, name: col_name, editable: true });
+			   
+			   }
+			   
+			   //If the schema has an empty array as the value, set the value to null. This allows the Entry Queue
+			   //table to display properly.
+			   
+			  /* var schemaDisplay = schemaList[schemaType]; 
+			   for(item in schemaDisplay[schemaDisplay.length - 1]){
+					var item_val = schemaDisplay[schemaDisplay.length - 1][item];
+					console.log(item,item_val, typeof item_val, item_val.length);
+					if(typeof item_val === "object" && item_val.length == 0)
+						schemaDisplay[schemaDisplay.length - 1][item] = null; 
+				
+			   }*/
+			   
+			   
+			   if(!$("#jqGrid_" + schemaType).hasClass("ui-jqgrid-btable")){
+					console.log("create grid");
+					$("#jqGrid_" + schemaType).jqGrid({
+						id: "results_grid",
+						datatype: "local",
+						data: schemaDisplay,
+						editurl: 'clientArray',
+						colModel: col_model,
+						viewrecords: true, // show the current page, data rang and total records on the toolbar
+						autowidth: true,
+						shrinkToFit:false, 
+						forceFit:true,
+						height: 'auto',
+						rowNum: 30,
+					});	
+				}
+				else{
+					//var new_row_id = $.jgrid.randId("new");
+					console.log("add new line");
+					$("#jqGrid_" + schemaType).jqGrid('clearGridData');
+					$("#jqGrid_" + schemaType).addRowData(row_key, schemaDisplay, "last");
+					$("#jqGrid_" + schemaType).jqGrid().trigger('reloadGrid');
+				}
+				$('html, body').animate({scrollTop : 0},1200);
             },
             Cancel: function() {
               $( this ).dialog( "close" );
+			  $('html, body').animate({scrollTop : 0},1200);
             }
           }
 		});
-
-        
       }         
-    });
+    }); 
 
   }
 
