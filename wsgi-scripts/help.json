@@ -72,7 +72,7 @@
             },    
             {
                 "Name":"Image",
-                "Description":" If you would like to include an image for your program, include its file name (online location) here. You will also need to submit the image itself along with the rest of your materials. If you choose not to include an image, please leave blank. <br>Type a text value.",
+                "Description":" If you would like to include an image for your program, include its file name (online location) here. You will also need to submit the image itself along with the rest of your materials by email to the Open Catalog development team. If you choose not to include an image, please leave blank. <br>Type a text value.",
                 "Example":"XDATA-image.png"
             }
         ]    

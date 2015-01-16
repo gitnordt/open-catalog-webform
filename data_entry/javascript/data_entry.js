@@ -298,6 +298,23 @@ $( function() {
 
     return html;
   }
+  
+  function createLabel(text, schemaType){
+	  var label = text;
+	  if ( label == "DARPA Program" ||  label == "Software" )
+		label = label + " Name";
+	  else if (label == "Link" || label == "Description" || label == "Image" || label == "License")
+		label = schemaType + " " + label;
+	  else if ( label == "Stats" )
+		label = label + " Link";
+	  else if (label == "Languages")
+		label = "Programming " + label;	  
+	  else if (label.indexOf("Pubs") != -1)
+		label = label.replace("Pubs", "Publication");
+
+	  return label;
+  }  
+  
   // Adds Help Menu text to the page so it can be
   // displayed in a dialog box. 
   // Type is the schema or tab type that the help button
@@ -311,24 +328,22 @@ $( function() {
     var desc;
     var example;
     var html;
-	
-	//console.log(type);
-	//console.log(menuText);
+	var label;
+
     for( var i=0; i<menuText.length; i++ ){
       name = menuText[i]['Name'];
       desc = menuText[i]['Description'];
       example = menuText[i]['Example'];
-      // Appends text to the body of the page, so that it can 
-      // be displayed in a dialog menu.
+	  label = createLabel(name, type);	
+      // Appends text to the body of the page, so that it can be displayed in a dialog menu.
       html = '<div title="Help" class="help" data-class="' + type + '" data-label="' + name +
-      '"><p><b>Name:</b> ' + name + '<br><br><b>Description:</b> ' + desc +
+      '"><p><b>Name:</b> ' + label + '<br><br><b>Description:</b> ' + desc +
       '<br><br><b>Example:</b> ' + example + '<br></p></div>';
       $( 'body' ).append(html);
     }
 
   }
-  
-
+    
   // Creates the table present in each tab or schema type on the page.
   // This includes input boxes (checkboxes or textareas) for each
   // field as well as adding help buttons for every row. The last row
@@ -353,7 +368,8 @@ $( function() {
     // It wil either be a textarea or a set of checkboxes depending
     // on the key name.
     for (var key in schema) {
-      var tableRow = '<tr><td>' + key + ':</td><td>'; // The label for the input
+	  var label = createLabel(key, schemaType);	
+      var tableRow = '<tr><td>' + label + ':</td><td>'; // The label for the input
 
       // Decides between adding checkboxes or a textarea, only two keys currently will generate checkboxes.
       if ( key == "Display Pubs Columns" || 
@@ -449,7 +465,21 @@ $( function() {
       var type = $( this ).attr("data-class");
       var label = $( this ).attr("data-label");
 	  var menu = '.help[data-label="' + label + '"][data-class="' + type + '"]';
-	  $( menu ).dialog();  
+	  $( menu ).dialog();
+	  $( menu ).dialog("widget").position({
+		my: "left+20px",
+		at: "center",
+		of:  $( this ),
+		collision: "fit",
+		using: function(pos) {
+			var max = window.scrollMaxY;
+            var topOffset = $(this).css(pos).offset().top;
+            if (topOffset < max + 400)
+                $(this).css('top', topOffset);
+			else
+			   $(this).css('top', max + 400);
+        }
+	  });  
     });
 
     $( ".append" ).button({
@@ -470,7 +500,12 @@ $( function() {
 	
 	$( ".appendHelp" ).click( function() {
       $( "#addTxt" ).dialog();
-    });
+	  $( "#addTxt" ).dialog("widget").position({
+		my: "left+20px",
+		at: "top-50px",
+		of:  $( this )
+      }); 
+	});
 
     return
   }
@@ -525,6 +560,9 @@ $( function() {
       var serverSubmit = {}; // The object that will eventually be passed to the server.
 	  var gridData = $("#jqGrid_" + currentSchema).jqGrid('getGridParam', 'data');
 	  gridData = getTableData(gridData);
+	  if(gridData.length < 1)
+		return false;
+		
 	  schemaList[currentSchema] = gridData;
 	  
 	  var newArray = {};
@@ -609,9 +647,9 @@ $( function() {
       if(currentMenu['Schema'] == "All") {
         var menu = {};
         menu = currentMenu['Menu'];
-		for (item in menu){
-			var desc = menu[item]['Description'];
-			var name = menu[item]['Name'];
+		for (var k = 0; k < menu.length; k++){
+			var desc = menu[k]['Description'];
+			var name = menu[k]['Name'];
 			var html = '<div id="' + name.toLowerCase() + 'Txt" title="Help" class="help">' + 
 			'<p><b>Name:</b> ' + name + '<br><br><b>Description:</b> ' + 
 			desc + '</p></div>';
@@ -718,35 +756,52 @@ $( function() {
     // Handles the submission of data on the page
     $( '.submit' ).click( function () {
 
-      // Creates a confirmation menu for the Submit button, where clicking confirm sends the data to the 
+      //$("#jqGrid_" + currentSchema)
+	  
+	  
+	  // Creates a confirmation menu for the Submit button, where clicking confirm sends the data to the 
 	  // server, while cancel sends them back to the page without doing anything.
-	 var subset = setSubmission();
-	 console.log(subset);
+	  
+	  try{	  
+	  
+		 var subset = setSubmission();
+		 if(subset){
+			//console.log(subset);
 
-      $( "#submitMenu" ).dialog({
-          resizable: false,
-          modal: true,
-          width: 300,
-          height: 200,
-          buttons: {
-            "Confirm": function() {
-			  $( this ).dialog( "close" );
-			  var result2 = getJSON('/wsgi-scripts/store_json.py', subset);
-			  if(result2.Status == "200 OK"){
-				//unload data, reset schema, and remove entry table
-				$("#jqGrid_" + currentSchema).GridUnload();
-				for(schema in schemaList)
-					schemaList[schema] = [];
-				//console.log($("#results_add_" + currentSchema));	
-				$("#results_add_" + currentSchema).css("display", "none");
-				alert("Submit was successful.");
-			  }
-            },
-            "Cancel": function() {
-              $( this ).dialog( "close" );
-            }
-          }
-      });
+			$( "#submitMenu" ).dialog({
+				resizable: false,
+				modal: true,
+				width: 300,
+				height: 200,
+				buttons: {
+					"Confirm": function() {
+					  $( this ).dialog( "close" );
+					  var result2 = getJSON('/wsgi-scripts/store_json.py', subset);
+					  if(result2.Status == "200 OK"){
+						//unload data, reset schema, and remove entry table
+						$("#jqGrid_" + currentSchema).GridUnload();
+						for(schema in schemaList)
+							schemaList[schema] = [];
+						$("#results_add_" + currentSchema).css("display", "none");
+						alert("Submit was successful.");
+					  }
+					},
+					"Cancel": function() {
+					  $( this ).dialog( "close" );
+					}
+				}
+			});
+		  }
+		  else{
+			throw "Must add at least 1 " + currentSchema.toLowerCase() + " entry before submitting."
+		  }
+	  }
+	  // Error handler
+      catch(err) {
+		  addError( err, "Data Submission" ); // Adds error text to html page
+		  $( '#error').show(); // Shows the error div on the html page
+		  scrollTo('error'); // Scrolls to the error div with an animation
+      }
 
     });
 
@@ -855,7 +910,7 @@ $( function() {
           height: 400,
 		  dialogClass: 'addConfirmation',
 		  position: {
-				my: "center",
+				my: "center-10%",
 				at: "top+20%",
 				of: window,
 				collision: "fit"
@@ -874,9 +929,7 @@ $( function() {
 				else
 					schemaDisplay.push(arrayToNullValue(schemaCopy));
 					
-				schemaList[schemaType] = schemaDisplay;
-				//console.log(schemaList[schemaType]);
-					
+				schemaList[schemaType] = schemaDisplay;	
                 clearTab(schemaType); // Clears the input boxes.
 
 			   $("#results_add_" + schemaType).css("display", "inline");
@@ -902,20 +955,9 @@ $( function() {
 			   }
 			   
 			   //If the schema has an empty array as the value, set the value to null. This allows the Entry Queue
-			   //table to display properly.
-			   
-			  /* var schemaDisplay = schemaList[schemaType]; 
-			   for(item in schemaDisplay[schemaDisplay.length - 1]){
-					var item_val = schemaDisplay[schemaDisplay.length - 1][item];
-					console.log(item,item_val, typeof item_val, item_val.length);
-					if(typeof item_val === "object" && item_val.length == 0)
-						schemaDisplay[schemaDisplay.length - 1][item] = null; 
-				
-			   }*/
-			   
-			   
+			   //table to display properly.   
 			   if(!$("#jqGrid_" + schemaType).hasClass("ui-jqgrid-btable")){
-					console.log("create grid");
+					//console.log("create grid");
 					$("#jqGrid_" + schemaType).jqGrid({
 						id: "results_grid",
 						datatype: "local",
@@ -931,8 +973,7 @@ $( function() {
 					});	
 				}
 				else{
-					//var new_row_id = $.jgrid.randId("new");
-					console.log("add new line");
+					//console.log("add new line");
 					$("#jqGrid_" + schemaType).jqGrid('clearGridData');
 					$("#jqGrid_" + schemaType).addRowData(row_key, schemaDisplay, "last");
 					$("#jqGrid_" + schemaType).jqGrid().trigger('reloadGrid');

@@ -43,7 +43,7 @@
 }
 
 textarea{
-	min-width:14em;
+	min-width:16em;
 	margin: 0 auto;
 	display: block;
 	font-size: 90% !important;
@@ -74,9 +74,7 @@ label{
 
 .ui-dialog{
 	width: 500px !important;
-	font-size:1em !important;
-	left: 40% !important;
-    top: 50% !important;
+	font-size:.9em !important;
 }
 
 .addConfirmation{
